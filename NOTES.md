@@ -17,6 +17,8 @@ This now allows a virginia.tfvars file to be created with reference to available
 
 we are now able to run the US instance with: terraform apply -var-file=virginia.tfvars
 
+Also to accommodate the different regions the ami's have been moved into a variable array.
+
 Q2:
 
 2.  The EC2 instance running Nginx went down over the weekend and we had an outage, it's been decided that we need a solution
@@ -26,3 +28,14 @@ Q2:
 Solution 2:
 
 Simple solution to this is render additional instances in the available availability_zones by implementing the "count" method. In this solution instances were created for all avs, however we could have just indicated a static number.
+
+Q3:
+
+3.  We are looking to improve the security of our network and have decided we need a bastion server to avoid logging on
+    directly to our servers. Add a bastion server, the bastion should be the only route to SSH onto any server in the
+    entire VPC.
+
+Solution 3:
+
+This solution involved removing the instance security egress rule.
+bastion.tf file created to setup bastion instances and relevant security groups.

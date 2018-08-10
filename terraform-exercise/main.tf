@@ -2,6 +2,11 @@ provider "aws" {
   region = "${var.region}"
 }
 
+resource "aws_key_pair" "instance_key" {
+  key_name   = "instance-key"
+  public_key = "${file("${var.INSTANCE_PUBLIC_KEY}")}"
+}
+
 resource "aws_vpc" "vpc" {
   cidr_block           = "${var.vpc-cidr}"
   enable_dns_hostnames = true
@@ -37,9 +42,11 @@ resource "aws_route_table_association" "subnet-route-table-association" {
 
 # Nginx
 resource "aws_instance" "instance" {
+  depends_on                  = ["aws_instance.bastion"]
   count                       = "${length(var.subnets)}"
-  ami                         = "ami-cdbfa4ab"
+  ami                         = "${lookup(var.AMIS, var.region)}"
   instance_type               = "t2.small"
+  key_name                    = "${aws_key_pair.instance_key.key_name}"
   vpc_security_group_ids      = ["${aws_security_group.security-group.id}"]
   subnet_id                   = "${aws_subnet.subnets.*.id}"
   associate_public_ip_address = true
@@ -60,31 +67,24 @@ resource "aws_security_group" "security-group" {
 
   ingress = [
     {
-      from_port   = "80"
-      to_port     = "80"
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      from_port = "80"
+      to_port   = "80"
+      protocol  = "tcp"
+      self      = true
     },
     {
-      from_port   = "443"
-      to_port     = "443"
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      from_port = "443"
+      to_port   = "443"
+      protocol  = "tcp"
+      self      = true
     },
     {
-      from_port   = "22"
-      to_port     = "22"
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      from_port = "22"
+      to_port   = "22"
+      protocol  = "tcp"
+      self      = true
     },
   ]
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 }
 
 output "nginx_domain" {
